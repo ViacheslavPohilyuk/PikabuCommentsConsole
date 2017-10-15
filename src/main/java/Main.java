@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.util.Scanner;
 
+import com.sun.xml.internal.xsom.impl.Ref;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -49,12 +50,45 @@ public class Main {
             }
             System.out.println("User's comments count: " + commentsCount);
 
+            String googleQueryPart = "";
+            if (gender.equals("мужской")) {
+                googleQueryPart = "отправил";
+            } else if (gender.equals("женский")) {
+                googleQueryPart = "отправила";
+            } else {
+                googleQueryPart = "отправлено";
+            }
+            String findUserCommentsQuery = "site:pikabu.ru+\"" + nickname + "+" + googleQueryPart + "\"";
+            String googleFindUserCommentsQuery = "https://www.google.com/search?q=" + findUserCommentsQuery;
+            System.out.println(googleFindUserCommentsQuery);
+
+            Document docComms = Jsoup.connect(googleFindUserCommentsQuery).get();
+            // System.out.println(docComms.body());
+
+            Elements elemsComments = docComms.select("a[href^=\"http://pikabu.ru/story/\"], [href^=\"https://pikabu.ru/story/\"]");
+            for (Element elCom : elemsComments) {
+                System.out.println(elCom.attr("href"));
+            }
+
+            String linkPost = elemsComments.get(0).attr("href");
+            Document postHtml = Jsoup.connect(linkPost).get();
+
+
+            Elements comments = postHtml.select("div.b-comment__body:contains(" + nickname + ")");
+            //Element comment = comments.get(0);
+
+            for (Element comm : comments) {
+                System.out.println(comm.getElementsByClass("b-comment__content").get(0).text());
+            }
+
+            //System.out.println(postHtml.select("div.b-comment span:contains(" + nickname + ")"));
+
+            // div.b-comment span:contains(Yukiri)
+
             double runTimeSeconds = (System.currentTimeMillis() - beginTime) / 1000D;
             System.out.println("Run time: " + runTimeSeconds + " seconds");
         } catch (HttpStatusException ex) {
             System.err.println("Недопустимые символы в имени пользователя!");
         }
-
-
     }
 }
