@@ -7,10 +7,12 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="PikabuComments" />
+        <module name="PikabuCommentsConsole" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
       <module name="PikabuComments" target="1.5" />
+      <module name="PikabuCommentsConsole" target="1.8" />
     </bytecodeTargetLevel>
   </component>
 </project>

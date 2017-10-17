@@ -1,14 +1,11 @@
 import java.io.IOException;
 import java.util.Scanner;
 
-import com.sun.xml.internal.xsom.impl.Ref;
 import org.jsoup.HttpStatusException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
-import javax.swing.*;
 
 /**
  * Created by mac on 13.10.17.
@@ -38,7 +35,6 @@ public class Main {
                 String elemImgGenderValue = genderImgList.get(0).attr("title");
                 int indexOfSpace = elemImgGenderValue.indexOf(" ");
                 gender = elemImgGenderValue.substring(indexOfSpace + 1);
-                System.out.println("User's gender: " + gender);
             }
 
             // Find out the count of user's comments
@@ -48,7 +44,6 @@ public class Main {
                 System.out.println("У пользователя нет комментариев!");
                 System.exit(0);
             }
-            System.out.println("User's comments count: " + commentsCount);
 
             String googleQueryPart = "";
             if (gender.equals("мужской")) {
@@ -60,33 +55,45 @@ public class Main {
             }
             String findUserCommentsQuery = "site:pikabu.ru+\"" + nickname + "+" + googleQueryPart + "\"";
             String googleFindUserCommentsQuery = "https://www.google.com/search?q=" + findUserCommentsQuery;
-            System.out.println(googleFindUserCommentsQuery);
+            Document docStories = Jsoup.connect(googleFindUserCommentsQuery).get();
+            Elements userStories = docStories.select("a[href^=\"http://pikabu.ru/story/\"], [href^=\"https://pikabu.ru/story/\"]");
+            for (Element story : userStories) {
+                // System.out.println(elCom.attr("href"));
+                String linkPost = story.attr("href");
+                Document postHtml = Jsoup.connect(linkPost).get();
 
-            Document docComms = Jsoup.connect(googleFindUserCommentsQuery).get();
-            // System.out.println(docComms.body());
+                // Title of a post
+                Element storyTitle = postHtml.select("div.story__header-title a").get(0);
+                System.out.println(storyTitle.text());
+                System.out.println("Ссылка на пост: " + storyTitle.attr("href"));
 
-            Elements elemsComments = docComms.select("a[href^=\"http://pikabu.ru/story/\"], [href^=\"https://pikabu.ru/story/\"]");
-            for (Element elCom : elemsComments) {
-                System.out.println(elCom.attr("href"));
+                Elements comments = postHtml.select("div.b-comment__body:contains(" + nickname + ")");
+                for (Element comm : comments) {
+                    Element header = comm.getElementsByClass("b-comment__header").get(0);
+
+                    // Rating of a comment
+                    String rating = header.getElementsByClass("b-comment__rating-count").get(0).text();
+                    System.out.println("\tРейтинг: " + rating);
+
+                    // Getting and displaying date and time when a comment has been posted
+                    String dateTime = header.getElementsByClass("b-comment__time").get(0).text();
+                    System.out.println("\tДата: " + dateTime);
+
+                    // Content of a comment
+                    System.out.println("\tСодержание: ");
+                    String content = comm.getElementsByClass("b-comment__content").get(0).text();
+                    System.out.println("\t" + content);
+
+                    // Link to a comment in a post
+                    String commentLink = header.getElementsByClass("b-comment__tools").get(0)
+                            .getElementsByTag("a").get(0)
+                            .attr("href");
+                    System.out.println("\tСсылка на комментарий: " + commentLink + "\n");
+                }
             }
-
-            String linkPost = elemsComments.get(0).attr("href");
-            Document postHtml = Jsoup.connect(linkPost).get();
-
-
-            Elements comments = postHtml.select("div.b-comment__body:contains(" + nickname + ")");
-            //Element comment = comments.get(0);
-
-            for (Element comm : comments) {
-                System.out.println(comm.getElementsByClass("b-comment__content").get(0).text());
-            }
-
-            //System.out.println(postHtml.select("div.b-comment span:contains(" + nickname + ")"));
-
-            // div.b-comment span:contains(Yukiri)
 
             double runTimeSeconds = (System.currentTimeMillis() - beginTime) / 1000D;
-            System.out.println("Run time: " + runTimeSeconds + " seconds");
+            System.out.println("\nRun time: " + runTimeSeconds + " seconds");
         } catch (HttpStatusException ex) {
             System.err.println("Недопустимые символы в имени пользователя!");
         }
