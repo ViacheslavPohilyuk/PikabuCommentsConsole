@@ -5,6 +5,7 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
+import java.util.Scanner;
 
 /**
  * Created by mac on 19.10.17.
@@ -55,11 +56,11 @@ public class UserCommentsRecognizer {
             String googleQueryPart = "";
             switch (gender) {
                 case "мужской": {
-                    googleQueryPart = "мужской";
+                    googleQueryPart = "отправил";
                     break;
                 }
                 case "женский": {
-                    googleQueryPart = "женский";
+                    googleQueryPart = "отправила";
                     break;
                 }
                 default:
@@ -86,49 +87,66 @@ public class UserCommentsRecognizer {
      * @param findCommentsQuery google query to find user's comments
      */
     public void recognizeUserComments(String findCommentsQuery) {
-        long beginTime = System.currentTimeMillis();
+        //long beginTime = System.currentTimeMillis();
 
         try {
-            Document docStories = Jsoup.connect(findCommentsQuery).get();
-            Elements userStories = docStories.select("a[href^=\"http://pikabu.ru/story/\"], [href^=\"https://pikabu.ru/story/\"]");
-            for (Element story : userStories) {
-                String linkPost = story.attr("href");
-                Document postHtml = Jsoup.connect(linkPost).get();
+            Boolean isNext;
+            int pageStart = 0;
+            String startGooglePage = "";
+            do {
+                isNext = false;
+                Document docStories = Jsoup.connect(findCommentsQuery + startGooglePage).get();
+                Elements userStories = docStories.select("a[href^=\"http://pikabu.ru/story/\"], [href^=\"https://pikabu.ru/story/\"]");
+                for (Element story : userStories) {
+                    String linkPost = story.attr("href");
+                    Document postHtml = Jsoup.connect(linkPost).get();
 
-                // Title of a post
-                Element storyTitle = postHtml.select("div.story__header-title a").get(0);
-                System.out.println(storyTitle.text());
-                System.out.println("Ссылка на пост: " + storyTitle.attr("href"));
+                    // Title of a post
+                    Element storyTitle = postHtml.select("div.story__header-title a").get(0);
+                    System.out.println(storyTitle.text());
+                    System.out.println("Ссылка на пост: " + storyTitle.attr("href"));
 
-                Elements comments = postHtml.select("div.b-comment__body:contains(" + username + ")");
-                for (Element comm : comments) {
-                    Element header = comm.getElementsByClass("b-comment__header").get(0);
+                    Elements comments = postHtml.select("div.b-comment__body:contains(" + username + ")");
+                    for (Element comm : comments) {
+                        Element header = comm.getElementsByClass("b-comment__header").get(0);
 
-                    // Rating of a comment
-                    String rating = header.getElementsByClass("b-comment__rating-count").get(0).text();
-                    System.out.println("\tРейтинг: " + rating);
+                        // Rating of a comment
+                        String rating = header.getElementsByClass("b-comment__rating-count").get(0).text();
+                        System.out.println("\tРейтинг: " + rating);
 
-                    // Getting and displaying date and time when a comment has been posted
-                    String dateTime = header.getElementsByClass("b-comment__time").get(0).text();
-                    System.out.println("\tДата: " + dateTime);
+                        // Getting and displaying date and time when a comment has been posted
+                        String dateTime = header.getElementsByClass("b-comment__time").get(0).text();
+                        System.out.println("\tДата: " + dateTime);
 
-                    // Content of a comment
-                    System.out.println("\tСодержание: ");
-                    String content = comm.getElementsByClass("b-comment__content").get(0).text();
-                    System.out.println("\t" + content);
+                        // Content of a comment
+                        System.out.println("\tСодержание: ");
+                        String content = comm.getElementsByClass("b-comment__content").get(0).text();
+                        System.out.println("\t" + content);
 
-                    // Link to a comment in a post
-                    String commentLink = header.getElementsByClass("b-comment__tools").get(0)
-                            .getElementsByTag("a").get(0)
-                            .attr("href");
-                    System.out.println("\tСсылка на комментарий: " + commentLink + "\n");
+                        // Link to a comment in a post
+                        String commentLink = header.getElementsByClass("b-comment__tools").get(0)
+                                .getElementsByTag("a").get(0)
+                                .attr("href");
+                        System.out.println("\tСсылка на комментарий: " + commentLink + "\n");
+                    }
+                }
+                System.out.println("Показать следующие 10 постов? (y/n)");
+                Scanner sc = new Scanner(System.in);
+                String answer = sc.next();
+                if (answer.equals("y")) {
+                    isNext = true;
+                    pageStart += 10;
+                    startGooglePage = "&start=" + pageStart;
+                    System.out.println("startGooglePage: " + startGooglePage);
+                    System.out.println("findCommentsQuery + startGooglePage :" + findCommentsQuery + startGooglePage);
                 }
             }
+            while (isNext);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        double runTimeSeconds = (System.currentTimeMillis() - beginTime) / 1000D;
-        System.out.println("Run time: " + runTimeSeconds);
+        //double runTimeSeconds = (System.currentTimeMillis() - beginTime) / 1000D;
+        //System.out.println("Run time: " + runTimeSeconds);
     }
 }
