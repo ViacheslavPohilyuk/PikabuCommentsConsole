@@ -11,7 +11,7 @@
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
-      <module name="PikabuComments" target="1.5" />
+      <module name="PikabuComments" target="1.8" />
       <module name="PikabuCommentsConsole" target="1.8" />
     </bytecodeTargetLevel>
   </component>
